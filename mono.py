@@ -13,36 +13,78 @@ import methods
 #	players.append(player_name)
 
 
+'''
+This function tests whether a player will pass go after their role.
+
+@param position_on board - An array indicating where each player is on the board
+@param i - An integer that represents which player is being assessed 
+@param spaces_to_move - An integer that indicates how many spaces to move from the players dice roll
+@return - boolean 
+
+'''
+def passed_go(position_on_board, i, spaces_to_move):
+	future_position = (position_on_board[i] + spaces_to_move) % 40
+	if position_on_board[i] > future_position:
+		return True
+	else:
+		return False
+
+
+'''
+This function tests if the current tile is currently owned.  This included being owned by the current player.
+
+@param position_on board - An array indicating where each player is on the board
+@param i - An integer that represents which player is being assessed 
+@return - boolean 
+
+'''
+def has_been_purchased(position_on_board, i):
+	for players_properties in range(len(owned_properties)):
+		if dictionary[position_on_board[i]][0] in owned_properties[players_properties]:
+			return True
+	return False
+
+
+'''
+This function tests whether the current player owes rent to another player for being on their property
+
+@param position_on board - An array indicating where each player is on the board
+@param i - An integer that represents which player is being assessed 
+@return - boolean 
+
+'''
+def owes_rent(position_on_board, i):
+	for players_properties in range(len(owned_properties)):
+		if players_properties == i:
+			continue
+		elif dictionary[position_on_board[i]][0] in owned_properties[players_properties]:
+			return True
+	return False 
+
 
 def assess(position_on_board, i):
-	no_rent = True;
-	#print(dictionary[position_on_board[i]][0])
 	if dictionary[position_on_board[i]][1] != None:
-		for j in range(len(owned_properties)):
-			if i == j:
-				continue
-			elif dictionary[position_on_board[i]][0] in owned_properties[j]:
-				player_balances[i] -= dictionary[position_on_board[i]][2]
-				no_rent = False;
-			else:
-				continue
-		if player_balances[i] > dictionary[position_on_board[i]][1] and no_rent:
+		if owes_rent(position_on_board, i):
+			player_balances[i] -= dictionary[position_on_board[i]][2]
+		elif has_been_purchased(position_on_board, i):
+			return
+		elif player_balances[i] > dictionary[position_on_board[i]][1] and not owes_rent(position_on_board, i):
 			player_balances[i] -= dictionary[position_on_board[i]][1]
 			owned_properties[i].append(dictionary[position_on_board[i]][0])
 
 
-
 def move(position_on_board, i, spaces_to_move):
 	square_counts[(position_on_board[i] + spaces_to_move) % 40] += 1
+	if passed_go(position_on_board, i, spaces_to_move):
+		player_balances[i] += 200
 	position_on_board[i] = (position_on_board[i] + spaces_to_move) % 40
 	assess(position_on_board, i)
 
 	
-
 def roll(players, position_on_board):
 	num_doubles = 0
 	i = 0
-	while ((i != len(players) or roll_again) and player_balances[i] >= 0):
+	while (i != len(players) or roll_again):
 		print(str(players[i]) + " is rolling!")
 		roll_again = False
 		first_die = randint(1,6)
@@ -64,14 +106,6 @@ def roll(players, position_on_board):
 			num_doubles = 0
 			i += 1
 
-	for j in range(len(position_on_board)):
-		print(position_on_board[j])
-		print(dictionary[position_on_board[j]])
-
-
-
-
-
 
 lst = list(range(0,40))
 players = ['Connor', 'Ashlyn', 'Jack', 'Alexa']
@@ -81,28 +115,22 @@ square_counts = [0] * 40
 owned_properties = [ [], [], [], [] ]
 
 
-dictionary = methods.create_board()
-still_players = True
+dictionary, chance, community_chest = methods.create_board()
+chance_deck, community_chest_deck = methods.shuffle_decks(chance, community_chest)
+
 k = 0
-while (still_players or k < 5):
-	count = 0
-	for i in range(len(player_balances)):
-		if player_balances[i] < 0:
-			count += 1
-	if count == 3:
-		still_players = False
-		break 
+while (k != 1):
 	roll(players, position_on_board)
+	for i in range(len(player_balances)):
+		print(str(players[i]) + ": " + "$" + str(player_balances[i]) + " " + str(owned_properties[i]))
 	k += 1
 
 
-
-for i in range(len(player_balances)):
-	print(str(players[i]) + ": " + str(player_balances[i]) + str(owned_properties[i]))
+#for i in range(len(player_balances)):
+#	print(str(players[i]) + ": " + str(player_balances[i]) + str(owned_properties[i]))
 
 #for i in range(0, len(square_counts)):
 #	print(str(i) + ": " + str(square_counts[i]))
-
 
 
 
